@@ -49,6 +49,7 @@ module.exports=function(app, options) {
             console.log(e);
           }
         }
+        next(err||new Error('unauthorized'));
       }
     });
   }
