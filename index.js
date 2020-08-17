@@ -25,31 +25,35 @@ module.exports=function(app, options) {
       } 
       req.accessToken=token || null;
       if (!err && req.accessToken) {
-        if (options.debug) console.log('ACCESS_TOKEN',req.accessToken);
+        if (options&&options.debug) console.log('ACCESS_TOKEN',req.accessToken);
         next();
       } else {
-        var err2;
-        try {
-          if (req.accepts('text/html')) {
-            res.redirect('/login');
-            if (options.debug) console.log('unauthorized: redirect to login ('+req.originalUrl+')');
-          } else {
-            res.status(401).end('unauthorized');
-            if (options.debug) console.log('unauthorized ('+req.originalUrl+')');
-          }
-        } catch(e) {
-          console.log(e);
-          err2=e;
-        } 
-        if (err2) {
+        if (options&&options.action) {
+          options.action(req,res,next)
+        } else {
+          var err2;
           try {
-            if (options.debug) console.log('unauthorized: destroy ('+req.originalUrl+')');
-            res.socket.destroy();
+            if (req.accepts('text/html')) {
+              res.redirect('/login');
+              if (options&&options.debug) console.log('unauthorized: redirect to login ('+req.originalUrl+')');
+            } else {
+              res.status(401).end('unauthorized');
+              if (options&&options.debug) console.log('unauthorized ('+req.originalUrl+')');
+            }
           } catch(e) {
             console.log(e);
+            err2=e;
           }
+          if (err2) {
+            try {
+              if (options&&options.debug) console.log('unauthorized: destroy ('+req.originalUrl+')');
+              res.socket.destroy();
+            } catch(e) {
+              console.log(e);
+            }
+          }
+          next(err||new Error('unauthorized'));
         }
-        next(err||new Error('unauthorized'));
       }
     });
   }
